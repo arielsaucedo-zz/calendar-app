@@ -1,6 +1,32 @@
+import Swal from "sweetalert2";
+import { fetchConToken } from "../helpers/fetch";
+import { prepareEvents } from "../helpers/prepareEvents";
 import { types } from "../types/types";
 
-export const eventAddNew = (event) => {
+export const eventStartAddNew = (event) => {
+  return async (dispatch, getState) => {
+    const { uid, name } = getState().auth;
+
+    try {
+      const resp = await fetchConToken("events", event, "POST");
+      const body = await resp.json();
+
+      if (body.ok) {
+        event.id = body.evento.id;
+        event.user = {
+          _id: uid,
+          name: name,
+        };
+
+        dispatch(eventAddNew(event));
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+};
+
+const eventAddNew = (event) => {
   return {
     type: types.eventAddNew,
     payload: event,
@@ -20,15 +46,84 @@ export const eventClearActiveEvent = () => {
   };
 };
 
-export const eventUpdated = (event) => {
+export const startEventUpdate = (event) => {
+  return async (dispatch) => {
+    try {
+      const resp = await fetchConToken(`events/${event.id}`, event, "PUT");
+      const body = await resp.json();
+
+      if (body.ok) {
+        dispatch(eventUpdated(event));
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: body.msg,
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+};
+
+const eventUpdated = (event) => {
   return {
     type: types.eventUpdated,
     payload: event,
   };
 };
 
-export const eventDeleted = (event) => {
+export const startEventDelete = () => {
+  return async (dispatch, getState) => {
+    const { id } = getState().calendar.activeEvent;
+    try {
+      const resp = await fetchConToken(`events/${id}`, {}, "DELETE");
+      const body = await resp.json();
+
+      if (body.ok) {
+        dispatch(eventDeleted());
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: body.msg,
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+};
+
+const eventDeleted = () => {
   return {
     type: types.eventDeleted,
+  };
+};
+
+export const eventStartLoading = () => {
+  return async (dispatch) => {
+    try {
+      const resp = await fetchConToken("events");
+      const body = await resp.json();
+      const events = prepareEvents(body.eventos);
+      dispatch(eventLoaded(events));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+};
+
+const eventLoaded = (events) => {
+  return {
+    type: types.eventLoaded,
+    payload: events,
+  };
+};
+
+export const eventClearActive = () => {
+  return {
+    type: types.eventClearActive,
   };
 };
