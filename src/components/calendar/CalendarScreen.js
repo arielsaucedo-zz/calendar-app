@@ -40,7 +40,6 @@ export const CalendarScreen = () => {
   const onDoubleClick = (e) => {
     // console.log(e);
     dispatch(uiOpenModal());
-    console.log("Abrir Modal!!!");
   };
 
   const onSelectEvent = (e) => {
